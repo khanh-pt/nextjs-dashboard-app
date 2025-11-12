@@ -20,51 +20,52 @@ const CreateInvoice = FormSchema.omit({ id: true, date: true });
 const UpdateInvoice = FormSchema.omit({ id: true, date: true });
 
 export async function createInvoice(formData: FormData) {
-  log(
-    'Creating invoice with data:',
-    typeof Object.fromEntries(formData.entries()),
-  );
-
   const data = CreateInvoice.parse(Object.fromEntries(formData.entries()));
-
   const amountInCents = data.amount * 100;
   const date = new Date().toISOString().split('T')[0];
-  log('Parsed invoice data:', data);
-  log('amountInCents:', amountInCents);
 
-  await sql`
-    INSERT INTO invoices (customer_id, amount, status, date)
-    VALUES (${data.customerId}, ${amountInCents}, ${data.status}, ${date})
-  `;
+  try {
+    await sql`
+      INSERT INTO invoices (customer_id, amount, status, date)
+      VALUES (${data.customerId}, ${amountInCents}, ${data.status}, ${date})
+    `;
+  } catch (error) {
+    log('Error inserting invoice:', error);
+    throw new Error(`Database Error: ${error}`);
+  }
 
   // revalidatePath('/dashboard/invoices');
   redirect('/dashboard/invoices');
 }
 
 export async function updateInvoice(id: string, formData: FormData) {
-  log(
-    'Updating invoice with data:',
-    typeof Object.fromEntries(formData.entries()),
-  );
-
   const data = UpdateInvoice.parse(Object.fromEntries(formData.entries()));
   const amountInCents = data.amount * 100;
-  log('Parsed invoice data:', data);
-  log('amountInCents:', amountInCents);
 
-  await sql`
-    UPDATE invoices
-    SET customer_id = ${data.customerId},
-        amount = ${amountInCents},
-        status = ${data.status}
-    WHERE id = ${id}
-  `;
+  try {
+    await sql`
+      UPDATE invoices
+      SET customer_id = ${data.customerId},
+          amount = ${amountInCents},
+          status = ${data.status}
+      WHERE id = ${id}
+    `;
+  } catch (error) {
+    log('Error updating invoice:', error);
+    throw new Error(`Database Error: ${error}`);
+  }
 
   // revalidatePath('/dashboard/invoices');
   redirect('/dashboard/invoices');
 }
 
 export async function deleteInvoice(id: string) {
-  await sql`DELETE FROM invoices WHERE id = ${id}`;
+  try {
+    await sql`DELETE FROM invoices WHERE id = ${id}`;
+  } catch (error) {
+    log('Error deleting invoice:', error);
+    throw new Error(`Database Error: ${error}`);
+  }
+
   revalidatePath('/dashboard/invoices');
 }
