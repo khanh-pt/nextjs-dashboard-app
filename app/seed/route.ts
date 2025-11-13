@@ -105,9 +105,9 @@ export async function GET() {
   try {
     const result = await sql.begin((sql) => [
       seedUsers(),
-      seedCustomers(),
-      seedInvoices(),
-      seedRevenue(),
+      // seedCustomers(),
+      // seedInvoices(),
+      // seedRevenue(),
     ]);
 
     return Response.json({ message: 'Database seeded successfully' });
