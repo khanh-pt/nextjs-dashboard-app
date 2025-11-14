@@ -4,7 +4,6 @@ import { log } from 'console';
 import { z } from 'zod';
 import postgres from 'postgres';
 import { redirect } from 'next/navigation';
-import { revalidatePath } from 'next/cache';
 import { AuthError } from 'next-auth';
 import { signIn } from '@/auth';
 
@@ -154,4 +153,83 @@ export async function deleteInvoice(prevState: State, formData: FormData) {
   }
 
   redirect('/dashboard/invoices');
+}
+
+// customers
+const CustomerFormSchema = z.object({
+  id: z.string(),
+  // length name must be at least 1 character
+  name: z.string().min(1, { message: 'Please enter a name.' }),
+  email: z.string().email({ message: 'Please enter a valid email.' }),
+});
+
+export type CustomerState = {
+  formData: {
+    name?: string;
+    email?: string;
+  };
+  errors: {
+    name?: string[];
+    email?: string[];
+  };
+  message: string | null;
+};
+
+const CreateCustomer = CustomerFormSchema.omit({ id: true });
+const DeleteCustomer = CustomerFormSchema.pick({ id: true });
+
+export async function createCustomer(
+  prevState: CustomerState,
+  formData: FormData,
+) {
+  log({ formData: Object.fromEntries(formData.entries()) });
+  const validatedFields = CreateCustomer.safeParse(
+    Object.fromEntries(formData.entries()),
+  );
+  if (!validatedFields.success) {
+    return {
+      formData: Object.fromEntries(formData.entries()),
+      errors: validatedFields.error.flatten().fieldErrors,
+      message: 'Missing Fields. Failed to Create Customer.',
+    } as CustomerState;
+  }
+
+  const data = validatedFields.data;
+
+  try {
+    console.log('Inserting customer:', data);
+    await sql`
+      INSERT INTO customers (name, email, image_url)
+        VALUES (${data.name}, ${data.email}, '/customers/evil-rabbit.png')
+    `;
+  } catch (error) {
+    log('Error inserting customer:', error);
+    throw new Error(`Database Error: ${error}`);
+  }
+
+  redirect('/dashboard/customers');
+}
+
+export async function deleteCustomer(prevState: State, formData: FormData) {
+  const validatedFields = DeleteCustomer.safeParse(
+    Object.fromEntries(formData.entries()),
+  );
+  if (!validatedFields.success) {
+    return {
+      formData: Object.fromEntries(formData.entries()),
+      errors: validatedFields.error.flatten().fieldErrors,
+      message: 'Missing Fields. Failed to Delete Customer.',
+    } as State;
+  }
+
+  const data = validatedFields.data;
+
+  try {
+    await sql`DELETE FROM customers WHERE id = ${data.id}`;
+  } catch (error) {
+    log('Error deleting customer:', error);
+    throw new Error(`Database Error: ${error}`);
+  }
+
+  redirect('/dashboard/customers');
 }
