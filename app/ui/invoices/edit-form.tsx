@@ -20,8 +20,21 @@ export default function EditInvoiceForm({
   customers: CustomerField[];
 }) {
   const updateInvoiceWithId = updateInvoice.bind(null, invoice.id);
-  const initialState: State = { message: null, errors: {} };
-  const [state, formAction] = useActionState(updateInvoiceWithId, initialState);
+  const initialState: State = {
+    formData: {
+      customerId: invoice.customer_id,
+      amount: invoice.amount,
+      status: invoice.status,
+    },
+    message: null,
+    errors: {},
+  };
+  const [state, formAction, isPending] = useActionState(
+    updateInvoiceWithId,
+    initialState,
+  );
+
+  console.log({ lll: state.formData });
 
   return (
     <form action={formAction}>
@@ -36,7 +49,8 @@ export default function EditInvoiceForm({
               id="customer"
               name="customerId"
               className="peer block w-full cursor-pointer rounded-md border border-gray-200 py-2 pl-10 text-sm outline-2 placeholder:text-gray-500"
-              defaultValue={invoice.customer_id}
+              defaultValue={state.formData.customerId}
+              key={state.formData.customerId}
               aria-describedby="customer-error"
             >
               <option value="" disabled>
@@ -72,7 +86,7 @@ export default function EditInvoiceForm({
                 name="amount"
                 type="number"
                 step="0.01"
-                defaultValue={invoice.amount}
+                defaultValue={state.formData.amount}
                 placeholder="Enter USD amount"
                 className="peer block w-full rounded-md border border-gray-200 py-2 pl-10 text-sm outline-2 placeholder:text-gray-500"
                 aria-describedby="amount-error"
@@ -103,7 +117,7 @@ export default function EditInvoiceForm({
                   name="status"
                   type="radio"
                   value="pending"
-                  defaultChecked={invoice.status === 'pending'}
+                  defaultChecked={state.formData.status === 'pending'}
                   className="h-4 w-4 cursor-pointer border-gray-300 bg-gray-100 text-gray-600 focus:ring-2"
                 />
                 <label
@@ -119,7 +133,7 @@ export default function EditInvoiceForm({
                   name="status"
                   type="radio"
                   value="paid"
-                  defaultChecked={invoice.status === 'paid'}
+                  defaultChecked={state.formData.status === 'paid'}
                   className="h-4 w-4 cursor-pointer border-gray-300 bg-gray-100 text-gray-600 focus:ring-2"
                   aria-describedby="status-error"
                 />
@@ -149,7 +163,13 @@ export default function EditInvoiceForm({
         >
           Cancel
         </Link>
-        <Button type="submit">Edit Invoice</Button>
+        {isPending ? (
+          <span className="flex h-10 items-center rounded-lg bg-blue-600/50 px-4 text-sm font-medium text-white">
+            Editing...
+          </span>
+        ) : (
+          <Button type="submit">Edit Invoice</Button>
+        )}
       </div>
     </form>
   );

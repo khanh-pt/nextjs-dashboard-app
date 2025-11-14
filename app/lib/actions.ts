@@ -25,12 +25,17 @@ const FormSchema = z.object({
 });
 
 export type State = {
-  errors?: {
+  formData: {
+    customerId?: string;
+    amount?: number;
+    status?: 'pending' | 'paid';
+  };
+  errors: {
     customerId?: string[];
     amount?: string[];
     status?: string[];
   };
-  message?: string | null;
+  message: string | null;
 };
 
 const CreateInvoice = FormSchema.omit({ id: true, date: true });
@@ -62,9 +67,10 @@ export async function createInvoice(prevState: State, formData: FormData) {
   );
   if (!validatedFields.success) {
     return {
+      formData: Object.fromEntries(formData.entries()),
       errors: validatedFields.error.flatten().fieldErrors,
       message: 'Missing Fields. Failed to Create Invoice.',
-    };
+    } as State;
   }
 
   const data = validatedFields.data;
@@ -96,9 +102,10 @@ export async function updateInvoice(
   );
   if (!validatedFields.success) {
     return {
+      formData: Object.fromEntries(formData.entries()),
       errors: validatedFields.error.flatten().fieldErrors,
       message: 'Missing Fields. Failed to Update Invoice.',
-    };
+    } as State;
   }
 
   const data = validatedFields.data;
