@@ -40,6 +40,9 @@ export type State = {
 
 const CreateInvoice = FormSchema.omit({ id: true, date: true });
 const UpdateInvoice = FormSchema.omit({ id: true, date: true });
+const DeleteInvoice = FormSchema.pick({
+  id: true,
+});
 
 export async function authenticate(
   prevState: string | undefined,
@@ -128,13 +131,27 @@ export async function updateInvoice(
   redirect('/dashboard/invoices');
 }
 
-export async function deleteInvoice(id: string) {
+export async function deleteInvoice(prevState: State, formData: FormData) {
+  const validatedFields = DeleteInvoice.safeParse(
+    Object.fromEntries(formData.entries()),
+  );
+  if (!validatedFields.success) {
+    return {
+      formData: Object.fromEntries(formData.entries()),
+      errors: validatedFields.error.flatten().fieldErrors,
+      message: 'Missing Fields. Failed to Delete Invoice.',
+    } as State;
+  }
+
+  const data = validatedFields.data;
+  const invoiceId = data.id;
+
   try {
-    await sql`DELETE FROM invoices WHERE id = ${id}`;
+    await sql`DELETE FROM invoices WHERE id = ${invoiceId}`;
   } catch (error) {
     log('Error deleting invoice:', error);
     throw new Error(`Database Error: ${error}`);
   }
 
-  revalidatePath('/dashboard/invoices');
+  redirect('/dashboard/invoices');
 }
