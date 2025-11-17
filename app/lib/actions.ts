@@ -11,7 +11,7 @@ const sql = postgres(process.env.POSTGRES_URL!, { ssl: 'require' });
 
 const FormSchema = z.object({
   id: z.string(),
-  customerId: z.string({
+  customerId: z.string().min(1, {
     message: 'Please select a customer.',
   }),
   amount: z.coerce
