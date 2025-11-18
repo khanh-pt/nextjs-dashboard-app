@@ -3,9 +3,16 @@ import { FormattedCustomersTable } from '@/app/lib/definitions';
 import { fetchFilteredCustomers } from '@/app/lib/data';
 import DeleteCustomerForm from './delete-form';
 
-export default async function CustomersTable({ query }: { query: string }) {
+export default async function CustomersTable({
+  query,
+  currentPage,
+}: {
+  query: string;
+  currentPage: number;
+}) {
   const customers: FormattedCustomersTable[] = await fetchFilteredCustomers(
     query,
+    currentPage,
   );
 
   return (
