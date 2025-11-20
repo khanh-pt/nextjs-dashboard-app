@@ -1,0 +1,190 @@
+'use client';
+
+import { useState, useImperativeHandle, forwardRef } from 'react';
+import { PhotoIcon, TrashIcon } from '@heroicons/react/24/outline';
+import Image from 'next/image';
+
+// Calculate file checksum (SHA-256)
+async function calculateFileChecksum(file: File): Promise<string> {
+  const arrayBuffer = await file.arrayBuffer();
+  const hashBuffer = await crypto.subtle.digest('SHA-256', arrayBuffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+interface ImageUploadProps {
+  defaultImageKey?: string;
+}
+
+export interface ImageUploadRef {
+  uploadImage: () => Promise<undefined>;
+}
+
+const ImageUpload = forwardRef<ImageUploadRef, ImageUploadProps>(
+  ({ defaultImageKey = '' }, ref) => {
+    const [uploading, setUploading] = useState(false);
+    const [imageKey, setImageKey] = useState(defaultImageKey);
+    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+    const [error, setError] = useState<string | null>(null);
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
+
+    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0];
+      if (!file) return;
+
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        setError('Please select an image file');
+        return;
+      }
+
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        setError('File size must be less than 5MB');
+        return;
+      }
+
+      setError(null);
+      setSelectedFile(file);
+
+      // Create preview URL for better UX
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPreviewUrl(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    };
+
+    // Expose upload function to parent component
+    const uploadImage = async (): Promise<undefined> => {
+      if (!selectedFile) return;
+
+      setUploading(true);
+      setError(null);
+
+      try {
+        // Step 1: Get presigned URL from backend with checksum
+        const response = await fetch('/api/upload/presigned-url', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            fileName: selectedFile.name,
+            contentType: selectedFile.type,
+            checksum: await calculateFileChecksum(selectedFile),
+            fileSize: selectedFile.size,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to get upload URL');
+        }
+
+        const { url, key } = await response.json();
+
+        console.log('Presigned URL:', url);
+
+        // Step 2: Upload file to GCS using presigned URL
+        const uploadResponse = await fetch(url, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': selectedFile.type,
+            'x-goog-content-length-range': `0,${selectedFile.size}`,
+          },
+          body: selectedFile,
+        });
+
+        if (!uploadResponse.ok) {
+          throw new Error('Failed to upload file');
+        }
+
+        setImageKey(key);
+        setSelectedFile(null);
+        setUploading(false);
+      } catch (err) {
+        console.error('Upload error:', err);
+        setError('Failed to upload image. Please try again.');
+        setUploading(false);
+        throw err;
+      }
+    };
+
+    // Expose uploadImage function to parent via ref
+    useImperativeHandle(ref, () => ({
+      uploadImage,
+    }));
+
+    return (
+      <div className="space-y-2">
+        <div className="flex items-center justify-center w-full">
+          <label
+            htmlFor="image-upload"
+            className="flex flex-col items-center justify-center w-full h-48 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100"
+          >
+            {previewUrl ? (
+              <div className="relative w-full h-full">
+                <Image
+                  src={previewUrl}
+                  alt="Preview"
+                  fill
+                  className="object-contain p-2 rounded-lg"
+                />
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                <PhotoIcon className="w-12 h-12 mb-3 text-gray-400" />
+                <p className="mb-2 text-sm text-gray-500">
+                  <span className="font-semibold">Click to upload</span> or drag
+                  and drop
+                </p>
+                <p className="text-xs text-gray-500">PNG, JPG, GIF up to 5MB</p>
+              </div>
+            )}
+            <input
+              id="image-upload"
+              type="file"
+              className="hidden"
+              accept="image/*"
+              onChange={handleFileChange}
+              disabled={uploading}
+            />
+          </label>
+        </div>
+        {previewUrl && (
+          <div className="flex items-center">
+            <span className="text-blue-600 p-1">
+              {selectedFile?.name} ({selectedFile?.size} bytes)
+            </span>
+            <TrashIcon
+              className="w-5 text-red-600 cursor-pointer"
+              onClick={(e) => {
+                e.stopPropagation();
+                setPreviewUrl(null);
+                setSelectedFile(null);
+                setError(null);
+              }}
+            />
+          </div>
+        )}
+
+        {/* Hidden input to store the image key for form submission */}
+        <input type="hidden" name="image_key" value={imageKey} />
+
+        {uploading && (
+          <p className="text-sm text-blue-600">Uploading image...</p>
+        )}
+
+        {error && <p className="text-sm text-red-500">{error}</p>}
+
+        {imageKey && !uploading && (
+          <p className="text-sm text-green-600">Image uploaded successfully!</p>
+        )}
+      </div>
+    );
+  },
+);
+
+ImageUpload.displayName = 'ImageUpload';
+
+export default ImageUpload;

@@ -1,5 +1,6 @@
 'use client';
 import Link from 'next/link';
+import { useState, useRef, startTransition } from 'react';
 import {
   CheckIcon,
   ClockIcon,
@@ -9,10 +10,12 @@ import {
 import { Button } from '@/app/ui/button';
 import { createCustomer, CustomerState } from '@/app/lib/actions';
 import { useActionState } from 'react';
+import ImageUpload, { ImageUploadRef } from '@/app/ui/customers/image-upload';
 
 export default function Form() {
+  const imageUploadRef = useRef<ImageUploadRef>(null);
   const initialState: CustomerState = {
-    formData: { name: '', email: '' },
+    formData: { name: '', email: '', image_key: '' },
     message: null,
     errors: {},
   };
@@ -20,13 +23,35 @@ export default function Form() {
     createCustomer,
     initialState,
   );
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    try {
+      // Upload image first if one is selected
+      if (imageUploadRef.current) {
+        await imageUploadRef.current.uploadImage();
+      }
+
+      // Now submit the form inside startTransition
+      const formData = new FormData(event.target as HTMLFormElement);
+      console.log('Form Data Entries:', Array.from(formData.entries()));
+
+      startTransition(() => {
+        formAction(formData);
+      });
+    } catch (error) {
+      console.error('Error during form submission:', error);
+    }
+  };
+
   // id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   // name VARCHAR(255) NOT NULL,
   // email VARCHAR(255) NOT NULL,
   // image_url VARCHAR(255) NOT NULL
 
   return (
-    <form action={formAction}>
+    <form onSubmit={handleSubmit}>
       <div className="rounded-md bg-gray-50 p-4 md:p-6">
         {/* Customer Name */}
         <div className="mb-4">
@@ -46,14 +71,14 @@ export default function Form() {
               <UserCircleIcon className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-gray-500 peer-focus:text-gray-900" />
             </div>
           </div>
-        </div>
-        <div id="customer-error" aria-live="polite" aria-atomic="true">
-          {state.errors.name &&
-            state.errors.name.map((error: string) => (
-              <p className="mt-2 text-sm text-red-500" key={error}>
-                {error}
-              </p>
-            ))}
+          <div id="customer-error" aria-live="polite" aria-atomic="true">
+            {state.errors.name &&
+              state.errors.name.map((error: string) => (
+                <p className="mt-2 text-sm text-red-500" key={error}>
+                  {error}
+                </p>
+              ))}
+          </div>
         </div>
 
         {/* Customer Email */}
@@ -74,14 +99,33 @@ export default function Form() {
               <UserCircleIcon className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-gray-500 peer-focus:text-gray-900" />
             </div>
           </div>
+          <div id="email-error" aria-live="polite" aria-atomic="true">
+            {state.errors?.email &&
+              state.errors.email.map((error: string) => (
+                <p className="mt-2 text-sm text-red-500" key={error}>
+                  {error}
+                </p>
+              ))}
+          </div>
         </div>
-        <div id="email-error" aria-live="polite" aria-atomic="true">
-          {state.errors?.email &&
-            state.errors.email.map((error: string) => (
-              <p className="mt-2 text-sm text-red-500" key={error}>
-                {error}
-              </p>
-            ))}
+
+        {/* Customer Image */}
+        <div className="mb-4">
+          <label htmlFor="image_key" className="mb-2 block text-sm font-medium">
+            Customer Image
+          </label>
+          <ImageUpload
+            ref={imageUploadRef}
+            defaultImageKey={state.formData.image_key}
+          />
+          <div id="image-error" aria-live="polite" aria-atomic="true">
+            {state.errors?.image_key &&
+              state.errors.image_key.map((error: string) => (
+                <p className="mt-2 text-sm text-red-500" key={error}>
+                  {error}
+                </p>
+              ))}
+          </div>
         </div>
       </div>
       <div className="mt-6 flex justify-end gap-4">

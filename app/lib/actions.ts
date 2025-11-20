@@ -161,16 +161,19 @@ const CustomerFormSchema = z.object({
   // length name must be at least 1 character
   name: z.string().min(1, { message: 'Please enter a name.' }),
   email: z.string().email({ message: 'Please enter a valid email.' }),
+  image_key: z.string().optional(),
 });
 
 export type CustomerState = {
   formData: {
     name?: string;
     email?: string;
+    image_key?: string;
   };
   errors: {
     name?: string[];
     email?: string[];
+    image_key?: string[];
   };
   message: string | null;
 };
@@ -198,9 +201,12 @@ export async function createCustomer(
 
   try {
     console.log('Inserting customer:', data);
+    // Store the image_key in the image_url column
+    // If no image_key provided, use default
+    const imageUrl = data.image_key || '/customers/evil-rabbit.png';
     await sql`
       INSERT INTO customers (name, email, image_url)
-        VALUES (${data.name}, ${data.email}, '/customers/evil-rabbit.png')
+        VALUES (${data.name}, ${data.email}, ${imageUrl})
     `;
   } catch (error) {
     log('Error inserting customer:', error);
