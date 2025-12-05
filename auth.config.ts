@@ -3,19 +3,22 @@ import Credentials from 'next-auth/providers/credentials';
 
 export const authConfig = {
   pages: {
-    signIn: '/login',
+    signIn: '/learning/login',
   },
   callbacks: {
     authorized({ auth, request: { nextUrl } }) {
       const isLoggedIn = !!auth?.user;
-      const isOnDashboard = nextUrl.pathname.startsWith('/dashboard');
-      console.log({ auth });
-      console.log({ isLoggedIn, isOnDashboard });
-      if (isOnDashboard) {
+      const isRequireAuth = ['/learning/dashboard', '/manage'].some((path) =>
+        nextUrl.pathname.startsWith(path),
+      );
+
+      if (isLoggedIn && nextUrl.pathname === '/login') {
+        return false; // Redirect logged-in users away from login page
+      }
+
+      if (isRequireAuth) {
         if (isLoggedIn) return true;
         return false; // Redirect unauthenticated users to login page
-      } else if (isLoggedIn) {
-        return Response.redirect(new URL('/dashboard', nextUrl));
       }
       return true;
     },
