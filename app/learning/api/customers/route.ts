@@ -1,4 +1,4 @@
-import { fetchCustomers } from '../../learning/lib/data';
+import { fetchCustomers } from '@/app/learning/lib/data';
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);

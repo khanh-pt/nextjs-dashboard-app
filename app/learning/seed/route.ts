@@ -5,7 +5,7 @@ import {
   customers,
   revenue,
   users,
-} from '../learning/lib/placeholder-data';
+} from '@/app/learning/lib/placeholder-data';
 
 const sql = postgres(process.env.POSTGRES_URL!, { ssl: 'require' });
 
