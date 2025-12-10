@@ -145,7 +145,7 @@ export async function login(prevState: LoginState, formData: FormData) {
     value: resJson.user.refreshToken,
   });
 
-  redirect('/manage/articles');
+  redirect(formData.get('redirectTo')?.toString() || '/');
 }
 
 export async function logout() {

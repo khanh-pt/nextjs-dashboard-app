@@ -7,8 +7,11 @@ import { Button } from '@/app/learning/ui/button';
 import { useActionState } from 'react';
 import { login, LoginState } from '@/app/common/actions/auth';
 import Link from 'next/dist/client/link';
+import { useSearchParams } from 'next/navigation';
 
 export default function LoginForm() {
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get('redirectTo') || '/';
   const initialState: LoginState = {
     formData: {},
     errors: {},
@@ -18,6 +21,7 @@ export default function LoginForm() {
 
   return (
     <form action={formAction} className="space-y-3">
+      <input type="hidden" name="redirectTo" value={redirectTo} />
       <div className="flex-1 rounded-lg bg-gray-50 px-6 pb-4 pt-8">
         <h1 className={`${lusitana.className} mb-3 text-2xl`}>Log in</h1>
         <div className="w-full">

@@ -78,7 +78,12 @@ export default async function middleware(req: NextRequest) {
   // how to protected routes, if no access token, redirect to login
   if (pathname.startsWith('/articles/create')) {
     if (!accessToken) {
-      return NextResponse.redirect(new URL('/login', req.url));
+      const loginUrl = new URL('/login', req.url);
+      loginUrl.searchParams.set(
+        'redirectTo',
+        `${pathname}${req.nextUrl.search}`,
+      );
+      return NextResponse.redirect(loginUrl);
     }
   }
 
