@@ -1,239 +1,138 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import * as React from 'react';
 import { ArrowLeftIcon, ArrowRightIcon } from '@heroicons/react/24/outline';
+import clsx from 'clsx';
+import Link from 'next/link';
+import { generatePagination } from '@/app/learning/lib/utils';
+import {
+  usePathname,
+  useSearchParams,
+} from 'next/dist/client/components/navigation';
 
-// import {
-//   Pagination,
-//   PaginationItem,
-//   PaginationLink,
-//   PaginationNext,
-//   PaginationContent,
-//   PaginationEllipsis,
-//   PaginationPrevious,
-// } from '@/components/ui/pagination';
-import { clsx } from 'clsx';
+export default function Pagination({
+  currentPage,
+  limit,
+  totalPages,
+}: {
+  currentPage: number;
+  limit: number;
+  totalPages: number;
+}) {
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
 
-type TPaginationComponents = {
-  page: number;
-  offset: number;
-  articlesCount: number;
-};
+  const allPages = generatePagination(currentPage, totalPages);
 
-export const PaginationComponent = ({
-  page,
-  offset,
-  articlesCount,
-}: TPaginationComponents) => {
-  const [limit, setLimit] = useState(page);
-  const path = usePathname();
-  const router = useRouter();
-  const param = useSearchParams();
-  const params = new URLSearchParams(param.toString());
-
-  let paginationLimit: number = Math.ceil(articlesCount / 10);
-  const setQuery = (
-    params: URLSearchParams,
-    elements: { key: string; value: any }[],
-  ) => {
-    elements.map((element) => {
-      params.set(element.key, element.value);
-    });
-
-    return params.toString();
-  };
-
-  useEffect(() => {
-    if (limit > paginationLimit) {
-      setLimit(paginationLimit);
-      const result = setQuery(params, [
-        { key: 'page', value: limit },
-        { key: 'offset', value: (limit - 1) * 10 },
-      ]);
-
-      router.push(`${path}?${result}`);
-    } else if (limit < 1) {
-      const result = setQuery(params, [
-        { key: 'page', value: 1 },
-        { key: 'offset', value: 0 },
-      ]);
-      router.push(`${path}?${result}`);
-    } else if (offset / 10 + 1 !== limit) {
-      const result = setQuery(params, [
-        { key: 'page', value: limit },
-        { key: 'offset', value: (limit - 1) * 10 },
-      ]);
-      router.push(`${path}?${result}`);
-    }
-  }, []);
-
-  let paginationElements: number[] = [];
-  let paginationEnd: number =
-    page > 10 ? page : paginationLimit < 10 ? paginationLimit : 10;
-  let paginationStart: number = page > 10 ? page - 9 : 1;
-
-  for (let i = paginationStart; i <= paginationEnd; i++) {
-    paginationElements.push(i);
-  }
-
-  const onPaginationClick = (page: number) => {
-    const result = setQuery(params, [
-      { key: 'page', value: page },
-      { key: 'offset', value: (page - 1) * 10 },
-    ]);
-    router.push(`${path}?${result}`);
-  };
-  const onNextClick = () => {
-    let nextPage = +page + 1;
-    const result = setQuery(params, [{ key: 'page', value: nextPage }]);
-
-    if (nextPage <= paginationLimit) router.push(`${path}?${result}`);
-  };
-  const onPrevClick = () => {
-    let prevPage = +page - 1;
-    const result = setQuery(params, [{ key: 'page', value: prevPage }]);
-    if (prevPage >= 1) router.push(`${path}?${result}`);
+  const createPageURL = (pageNumber: number | string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('offset', +((pageNumber as number) - 1) * limit + '');
+    params.set('limit', limit.toString());
+    params.set('page', pageNumber.toString());
+    return `${pathname}?${params.toString()}`;
   };
 
   return (
-    <Pagination>
-      <PaginationContent className="flex-wrap gap-0">
-        <PaginationItem>
-          <PaginationPrevious
-            onClick={onPrevClick}
-            className={clsx(
-              'cursor-pointer bg-transparent border p-1 hover:bg-gray-300 focus:bg-green-custom focus:text-white rounded-none rounded-l',
-              page == 1 && 'hidden',
-            )}
-          />
-        </PaginationItem>
-        <PaginationItem>
-          <PaginationEllipsis
-            className={clsx(
-              'bg-transparent  p-1 h-10  border',
+    <>
+      <div className="inline-flex">
+        <PaginationArrow
+          direction="left"
+          href={createPageURL(currentPage - 1)}
+          isDisabled={currentPage <= 1}
+        />
 
-              paginationStart === 1 && 'hidden',
-            )}
-          />
-        </PaginationItem>
-        {paginationElements.map((element) => (
-          <PaginationItem key={element}>
-            <PaginationLink
-              onClick={() => onPaginationClick(element)}
-              className={clsx(
-                'bg-transparent border p-1 rounded-none cursor-pointer hover:bg-gray-300 ',
-                page == element && 'bg-green-custom text-white',
-              )}
-            >
-              {element}
-            </PaginationLink>
-          </PaginationItem>
-        ))}
-        <PaginationItem>
-          <PaginationEllipsis
-            className={clsx(
-              'bg-transparent  p-1 h-10  border',
+        <div className="flex -space-x-px">
+          {allPages.map((page, index) => {
+            let position: 'first' | 'last' | 'single' | 'middle' | undefined;
 
-              paginationEnd == paginationLimit && 'hidden',
-            )}
-          />
-        </PaginationItem>
-        <PaginationItem>
-          <PaginationNext
-            onClick={onNextClick}
-            className={clsx(
-              'cursor-pointer bg-transparent border p-1 hover:bg-gray-300 focus:bg-green-custom focus:text-white rounded-none rounded-r',
-              page == paginationLimit && 'hidden',
-            )}
-          />
-        </PaginationItem>
-      </PaginationContent>
-    </Pagination>
+            if (index === 0) position = 'first';
+            if (index === allPages.length - 1) position = 'last';
+            if (allPages.length === 1) position = 'single';
+            if (page === '...') position = 'middle';
+
+            return (
+              <PaginationNumber
+                key={`${page}-${index}`}
+                href={createPageURL(page)}
+                page={page}
+                position={position}
+                isActive={currentPage === page}
+              />
+            );
+          })}
+        </div>
+
+        <PaginationArrow
+          direction="right"
+          href={createPageURL(currentPage + 1)}
+          isDisabled={currentPage >= totalPages}
+        />
+      </div>
+    </>
   );
-};
+}
 
-const Pagination = ({ className, ...props }: React.ComponentProps<'nav'>) => (
-  <nav
-    role="navigation"
-    aria-label="pagination"
-    className={clsx('mx-auto flex w-full justify-center', className)}
-    {...props}
-  />
-);
-
-const PaginationContent = React.forwardRef<
-  HTMLUListElement,
-  React.ComponentProps<'ul'>
->(({ className, ...props }, ref) => (
-  <ul
-    ref={ref}
-    className={clsx('flex flex-row items-center gap-1', className)}
-    {...props}
-  />
-));
-
-const PaginationItem = React.forwardRef<
-  HTMLLIElement,
-  React.ComponentProps<'li'>
->(({ className, ...props }, ref) => (
-  <li ref={ref} className={clsx('', className)} {...props} />
-));
-
-type PaginationLinkProps = {
-  isActive?: boolean;
-} & React.ComponentProps<'a'>;
-
-const PaginationLink = ({
-  className,
+function PaginationNumber({
+  page,
+  href,
   isActive,
-  ...props
-}: PaginationLinkProps) => (
-  <a
-    aria-current={isActive ? 'page' : undefined}
-    className={clsx(className, isActive ? 'outline' : 'ghost')}
-    {...props}
-  />
-);
+  position,
+}: {
+  page: number | string;
+  href: string;
+  position?: 'first' | 'last' | 'middle' | 'single';
+  isActive: boolean;
+}) {
+  const className = clsx(
+    'flex h-10 w-10 items-center justify-center text-sm border',
+    {
+      'rounded-l-md': position === 'first' || position === 'single',
+      'rounded-r-md': position === 'last' || position === 'single',
+      'z-10 bg-blue-600 border-blue-600 text-white': isActive,
+      'hover:bg-gray-100': !isActive && position !== 'middle',
+      'text-gray-300': position === 'middle',
+    },
+  );
 
-const PaginationPrevious = ({
-  className,
-  ...props
-}: React.ComponentProps<typeof PaginationLink>) => (
-  <PaginationLink
-    aria-label="Go to previous page"
-    className={clsx('gap-1 pl-2.5', className)}
-    {...props}
-  >
-    <ArrowLeftIcon className="h-4 w-4" />
-  </PaginationLink>
-);
+  return isActive || position === 'middle' ? (
+    <div className={className}>{page}</div>
+  ) : (
+    <Link href={href} className={className}>
+      {page}
+    </Link>
+  );
+}
 
-const PaginationNext = ({
-  className,
-  ...props
-}: React.ComponentProps<typeof PaginationLink>) => (
-  <PaginationLink
-    aria-label="Go to next page"
-    className={clsx('gap-1 pr-2.5', className)}
-    {...props}
-  >
-    <ArrowRightIcon className="h-4 w-4" />
-  </PaginationLink>
-);
+function PaginationArrow({
+  href,
+  direction,
+  isDisabled,
+}: {
+  href: string;
+  direction: 'left' | 'right';
+  isDisabled?: boolean;
+}) {
+  const className = clsx(
+    'flex h-10 w-10 items-center justify-center rounded-md border',
+    {
+      'pointer-events-none text-gray-300': isDisabled,
+      'hover:bg-gray-100': !isDisabled,
+      'mr-2 md:mr-4': direction === 'left',
+      'ml-2 md:ml-4': direction === 'right',
+    },
+  );
 
-const PaginationEllipsis = ({
-  className,
-  ...props
-}: React.ComponentProps<'span'>) => (
-  <span
-    aria-hidden
-    className={clsx('flex h-9 w-9 items-center justify-center', className)}
-    {...props}
-  >
-    {/* <MoreHorizontal className="h-4 w-4" /> */}
-    More icon
-    <span className="sr-only">More pages</span>
-  </span>
-);
+  const icon =
+    direction === 'left' ? (
+      <ArrowLeftIcon className="w-4" />
+    ) : (
+      <ArrowRightIcon className="w-4" />
+    );
+
+  return isDisabled ? (
+    <div className={className}>{icon}</div>
+  ) : (
+    <Link className={className} href={href}>
+      {icon}
+    </Link>
+  );
+}

@@ -91,7 +91,7 @@ export default function LoginForm() {
           href="/register"
           className="mt-4 block text-center text-sm text-gray-600 hover:text-gray-900"
         >
-          Don't have an account? Register
+          Don&apos;t have an account? Register
         </Link>
       </div>
     </form>

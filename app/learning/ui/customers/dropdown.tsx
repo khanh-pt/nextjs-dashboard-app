@@ -1,5 +1,5 @@
-import { RefObject, useEffect, useRef, useState } from 'react';
-import { CustomerField } from '../../learning/lib/definitions';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { CustomerField } from '@/app/learning/lib/definitions';
 import { State } from '@/app/learning/lib/actions';
 import { CheckCircleIcon, UserCircleIcon } from '@heroicons/react/24/solid';
 
@@ -22,7 +22,7 @@ export function Dropdown({
   const [selectedCustomer, setSelectedCustomer] =
     useState<CustomerField | null>(initSelectedCustomer || null);
 
-  async function loadMore() {
+  const loadMore = useCallback(async () => {
     if (loading) return;
     if (!hasMore) return;
 
@@ -42,7 +42,7 @@ export function Dropdown({
     setCustomers((prev) => [...prev, ...data.customers]);
     setPage(nextPage);
     setLoading(false);
-  }
+  }, [page, loading, hasMore]);
 
   // Infinite scroll listener
   useEffect(() => {
@@ -59,7 +59,7 @@ export function Dropdown({
 
     el.addEventListener('scroll', handleScroll);
     return () => el.removeEventListener('scroll', handleScroll);
-  }, [page, loading, open]);
+  }, [page, loading, open, loadMore]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {

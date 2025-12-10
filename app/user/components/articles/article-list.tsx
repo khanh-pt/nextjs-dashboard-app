@@ -1,6 +1,6 @@
 import { apiFetch } from '@/app/common/fetch';
-import { Article } from './article';
-import { PaginationComponent } from './pagination';
+import { Article } from '@/app/user/components/articles/article';
+import Pagination from '@/app/user/components/articles/pagination';
 
 type TArticleListProps = {
   feed: any;
@@ -41,11 +41,18 @@ export const ArticleList = async ({
 
   const resJson = await res.json();
   const { articles, articlesCount } = resJson;
+  const totalPages = Math.ceil(articlesCount / limit);
+  console.log(articles);
 
   return (
     <>
       {articlesCount > 0 ? (
         <>
+          <Pagination
+            currentPage={page}
+            limit={limit}
+            totalPages={totalPages}
+          />
           <div className="my-5">
             {articles.map((article: any, i: number) => (
               <Article
@@ -64,10 +71,10 @@ export const ArticleList = async ({
               />
             ))}
           </div>
-          <PaginationComponent
-            page={page}
-            offset={offset as number}
-            articlesCount={articlesCount}
+          <Pagination
+            currentPage={page}
+            limit={limit}
+            totalPages={totalPages}
           />
         </>
       ) : (

@@ -9,7 +9,7 @@ type TArticleProps = {
   slug: string;
   title: string;
   username: string;
-  imageSrc: string;
+  imageSrc: string | null;
   tagList: string[];
   favorited: boolean;
   description: string;
@@ -32,7 +32,11 @@ export const Article = ({
       <div className="flex justify-between items-center">
         <div className="w-fit h-fit bg-transparent flex gap-1 items-center">
           <Link href={`/profile/${username}`}>
-            <Image src={imageSrc} alt={username} width={40} height={40} />
+            {imageSrc ? (
+              <Image src={imageSrc} alt={username} width={40} height={40} />
+            ) : (
+              <div className="w-10 h-10 bg-gray-300 rounded-full" />
+            )}
             {username}
           </Link>
         </div>
