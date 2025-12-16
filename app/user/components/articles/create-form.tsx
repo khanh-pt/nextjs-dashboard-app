@@ -1,18 +1,21 @@
 'use client';
-import { CustomerField } from '@/app/learning/lib/definitions';
-import Link from 'next/link';
-import {
-  CheckIcon,
-  ClockIcon,
-  CurrencyDollarIcon,
-  UserCircleIcon,
-} from '@heroicons/react/24/outline';
+
 import { Button } from '@/app/learning/ui/button';
 import { createArticle, State } from '@/app/user/actions/articles';
-import { useActionState, useEffect, useRef, useState } from 'react';
-import { Dropdown } from '../../../learning/ui/customers/dropdown';
+import {
+  startTransition,
+  useActionState,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
+import ImageUpload, {
+  ImageUploadRef,
+} from '@/app/common/components/image-upload';
 
 export default function CreateForm() {
+  const imageUploadRef = useRef<ImageUploadRef>(null);
+
   const initialState: State = {
     formData: {},
     message: null,
@@ -23,8 +26,36 @@ export default function CreateForm() {
     initialState,
   );
 
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    try {
+      const formData = new FormData(event.target as HTMLFormElement);
+
+      // Upload image first if one is selected
+      if (imageUploadRef.current) {
+        const result = await imageUploadRef.current.uploadImage();
+        console.log('Image upload result:', result);
+        if (result) {
+          formData.append('key', result.key);
+          formData.append('fileId', result.fileId.toString());
+          formData.append('role', result.role);
+        }
+      }
+
+      console.log('Form Data Entries:', Array.from(formData.entries()));
+
+      // Now submit the form inside startTransition
+      startTransition(() => {
+        formAction(formData);
+      });
+    } catch (error) {
+      console.error('Error during form submission:', error);
+    }
+  };
+
   return (
-    <form action={formAction}>
+    <form onSubmit={handleSubmit}>
       <div>
         {state.message && (
           <p className="mb-4 text-sm text-red-500">{state.message}</p>
@@ -100,6 +131,22 @@ export default function CreateForm() {
               ))}
             </div>
           )}
+        </div>
+
+        {/* Customer Image */}
+        <div className="mb-4">
+          <label
+            htmlFor="image_upload"
+            className="mb-2 block text-sm font-medium"
+          >
+            Customer Image
+          </label>
+          <ImageUpload
+            ref={imageUploadRef}
+            defaultFileId={undefined}
+            defaultImageKey={undefined}
+            defaultRole="thumbnails"
+          />
         </div>
 
         <div className="mt-4">

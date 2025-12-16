@@ -14,6 +14,7 @@ type TArticleProps = {
   favorited: boolean;
   description: string;
   favoritesCount: number;
+  thumbnailUrl: string | null;
 };
 
 export const Article = ({
@@ -26,7 +27,9 @@ export const Article = ({
   favorited,
   description,
   favoritesCount,
+  thumbnailUrl,
 }: TArticleProps) => {
+  console.log({ thumbnailUrl });
   return (
     <div className="flex flex-col gap-4 group/item my-4">
       <div className="flex justify-between items-center">
@@ -61,6 +64,16 @@ export const Article = ({
         </p>
         <h1 className="text-2xl font-bold">{title}</h1>
         <h2 className={`text-zinc-400 font-extralight`}>{description}</h2>
+        {thumbnailUrl && (
+          <div className="relative w-full h-60 mt-2">
+            <Image
+              src={thumbnailUrl}
+              alt={title}
+              fill
+              className="object-contain rounded-md"
+            />
+          </div>
+        )}
       </Link>
       <div className="flex justify-between items-center p-0 m-0">
         <Link href={`/article/${slug}`}>

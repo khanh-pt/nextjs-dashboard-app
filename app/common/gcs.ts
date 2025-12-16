@@ -15,18 +15,18 @@ const bucketName = process.env.GCS_BUCKET_NAME!;
 
 /**
  * Generate a presigned URL for uploading a file to GCS
- * @param fileName - The name of the file to upload
+ * @param filename - The name of the file to upload
  * @param contentType - The MIME type of the file
  * @returns Object containing the presigned URL and the key (file path in bucket)
  */
 export async function generatePresignedUploadUrl(
-  fileName: string,
+  filename: string,
   fileSize: number,
   contentType: string,
 ): Promise<{ url: string; key: string }> {
-  const lastDotIndex = fileName.lastIndexOf('.');
+  const lastDotIndex = filename.lastIndexOf('.');
   const fileExtension =
-    lastDotIndex !== -1 ? fileName.substring(lastDotIndex) : '';
+    lastDotIndex !== -1 ? filename.substring(lastDotIndex) : '';
   const { randomUUID } = await import('crypto');
 
   // Generate a unique key for the file

@@ -68,6 +68,10 @@ export const ArticleList = async ({
                 favorited={article.favorited}
                 favoritesCount={article.favoritesCount}
                 tagList={article.tagList}
+                thumbnailUrl={
+                  article.files.find((file: any) => file.role === 'thumbnails')
+                    ?.url
+                }
               />
             ))}
           </div>

@@ -22,6 +22,9 @@ const FormSchema = z.object({
             .filter((tag) => tag.length > 0)
         : [],
     ),
+  fileId: z.string().optional(),
+  key: z.string().optional(),
+  role: z.string().optional(),
 });
 
 export type State = {
@@ -29,6 +32,9 @@ export type State = {
     title?: string;
     description?: string;
     body?: string;
+    fileId?: string;
+    key?: string;
+    role?: string;
     tagList?: string[];
   };
   errors: {
@@ -69,12 +75,21 @@ export async function createArticle(prevState: State, formData: FormData) {
   });
 
   if (!res.ok) {
-    const resJson = await res.json();
-    console.log({ resJson });
+    let errors = {};
+    if (res.status === 422) {
+      const resJson = await res.json();
+      errors = resJson.details?.reduce((acc: any, curr: any) => {
+        if (!acc[curr.property]) {
+          acc[curr.property] = [];
+        }
+        acc[curr.property].push(curr.message);
+        return acc;
+      }, {} as Record<string, string[]>);
+    }
 
     return {
       formData: Object.fromEntries(formData.entries()),
-      errors: resJson.details,
+      errors,
       message: 'Failed to create article.',
     } as State;
   }
