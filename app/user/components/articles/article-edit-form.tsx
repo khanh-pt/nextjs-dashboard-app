@@ -1,23 +1,41 @@
 'use client';
 
 import { Button } from '@/app/learning/ui/button';
-import { createArticle, State } from '@/app/user/actions/articles';
+import { State, updateArticle } from '@/app/user/actions/articles';
 import { startTransition, useActionState, useRef } from 'react';
 import ImageUpload, {
   ImageUploadRef,
 } from '@/app/common/components/image-upload';
+import { TArticleProps } from '@/app/user/types/article';
 import { EFileRole } from '@/app/user/types/file';
 
-export default function CreateForm() {
+export default function ArticleEditForm({
+  article,
+}: {
+  article: TArticleProps;
+}) {
+  const { slug, title, description, body, tagList } = article;
+  const { id, key, role, url, filename, byteSize } = article.files?.find(
+    (file) => file.role === EFileRole.THUMBNAILS,
+  ) || { fileId: undefined, key: undefined, role: undefined };
+
   const imageUploadRef = useRef<ImageUploadRef>(null);
 
   const initialState: State = {
-    formData: {},
+    formData: {
+      title,
+      description,
+      body,
+      tagList,
+      fileId: id,
+      key,
+      role: role as EFileRole,
+    },
     message: null,
     errors: {},
   };
   const [state, formAction, isPending] = useActionState(
-    createArticle,
+    updateArticle.bind(null, slug),
     initialState,
   );
 
@@ -138,17 +156,20 @@ export default function CreateForm() {
           </label>
           <ImageUpload
             ref={imageUploadRef}
-            defaultFileId={undefined}
-            defaultImageKey={undefined}
-            defaultRole={EFileRole.THUMBNAILS}
+            defaultFileId={state.formData.fileId}
+            defaultImageKey={state.formData.key}
+            defaultRole={state.formData.role as EFileRole}
+            defaultImageUrl={url}
+            defaultFilename={filename}
+            defaultFileSize={byteSize}
           />
         </div>
 
         <div className="mt-4">
           {isPending ? (
-            <p>Creating article...</p>
+            <p>Updating article...</p>
           ) : (
-            <Button type="submit">Create Article</Button>
+            <Button type="submit">Update Article</Button>
           )}
         </div>
       </div>

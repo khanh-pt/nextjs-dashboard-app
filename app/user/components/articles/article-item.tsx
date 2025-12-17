@@ -17,7 +17,7 @@ type TArticleProps = {
   thumbnailUrl: string | null;
 };
 
-export const Article = ({
+export const ArticleItem = ({
   lastModified,
   slug,
   title,
@@ -29,7 +29,7 @@ export const Article = ({
   favoritesCount,
   thumbnailUrl,
 }: TArticleProps) => {
-  console.log({ thumbnailUrl });
+  // console.log({ thumbnailUrl });
   return (
     <div className="flex flex-col gap-4 group/item my-4">
       <div className="flex justify-between items-center">
@@ -51,7 +51,7 @@ export const Article = ({
           refreshUrl="/"
         />
       </div>
-      <Link href={`/article/${slug}`}>
+      <Link href={`/articles/${slug}`}>
         <p className="opacity-65 font-light">
           {new Date(lastModified).toLocaleString('vi-VN', {
             year: 'numeric',
@@ -76,7 +76,7 @@ export const Article = ({
         )}
       </Link>
       <div className="flex justify-between items-center p-0 m-0">
-        <Link href={`/article/${slug}`}>
+        <Link href={`/articles/${slug}`}>
           <span className="text-sm text-zinc-400">Read more...</span>
         </Link>
         <TagList

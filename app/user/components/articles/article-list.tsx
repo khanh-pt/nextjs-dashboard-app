@@ -1,5 +1,5 @@
 import { apiFetch } from '@/app/common/fetch';
-import { Article } from '@/app/user/components/articles/article';
+import { ArticleItem } from '@/app/user/components/articles/article-item';
 import Pagination from '@/app/user/components/articles/pagination';
 
 type TArticleListProps = {
@@ -42,7 +42,7 @@ export const ArticleList = async ({
   const resJson = await res.json();
   const { articles, articlesCount } = resJson;
   const totalPages = Math.ceil(articlesCount / limit);
-  console.log(articles);
+  // console.log(articles);
 
   return (
     <>
@@ -55,7 +55,7 @@ export const ArticleList = async ({
           />
           <div className="my-5">
             {articles.map((article: any, i: number) => (
-              <Article
+              <ArticleItem
                 key={i}
                 slug={article.slug}
                 title={article.title}

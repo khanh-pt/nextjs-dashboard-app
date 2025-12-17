@@ -3,6 +3,7 @@
 import { useState, useImperativeHandle, forwardRef } from 'react';
 import { PhotoIcon, TrashIcon } from '@heroicons/react/24/outline';
 import Image from 'next/image';
+import { EFileRole } from '@/app/user/types/file';
 
 // Calculate file checksum (SHA-256)
 async function calculateFileChecksum(file: File): Promise<string> {
@@ -15,7 +16,10 @@ async function calculateFileChecksum(file: File): Promise<string> {
 interface ImageUploadProps {
   defaultFileId?: number;
   defaultImageKey?: string;
-  defaultRole: 'thumbnails' | 'images' | 'videos';
+  defaultRole: EFileRole;
+  defaultImageUrl?: string;
+  defaultFilename?: string;
+  defaultFileSize?: number;
 }
 
 export interface ImageUploadRef {
@@ -25,13 +29,26 @@ export interface ImageUploadRef {
 }
 
 const ImageUpload = forwardRef<ImageUploadRef, ImageUploadProps>(
-  ({ defaultFileId = '', defaultImageKey = '', defaultRole }, ref) => {
+  (
+    {
+      defaultFileId = '',
+      defaultImageKey = '',
+      defaultRole,
+      defaultImageUrl = '',
+      defaultFilename = '',
+      defaultFileSize = 0,
+    },
+    ref,
+  ) => {
     const [uploading, setUploading] = useState(false);
     const [fileId, setFileId] = useState(defaultFileId);
     const [imageKey, setImageKey] = useState(defaultImageKey);
-    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+    const [previewUrl, setPreviewUrl] = useState<string | null>(
+      defaultImageUrl,
+    );
     const [error, setError] = useState<string | null>(null);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const [successUpload, setSuccessUpload] = useState<Boolean>(false);
 
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
       const file = event.target.files?.[0];
@@ -126,6 +143,7 @@ const ImageUpload = forwardRef<ImageUploadRef, ImageUploadProps>(
         setImageKey(key);
         setSelectedFile(null);
         setUploading(false);
+        setSuccessUpload(true);
         return { fileId, key, role: defaultRole };
       } catch (err) {
         setError(
@@ -179,7 +197,8 @@ const ImageUpload = forwardRef<ImageUploadRef, ImageUploadProps>(
         {previewUrl && (
           <div className="flex items-center">
             <span className="text-blue-600 p-1">
-              {selectedFile?.name} ({selectedFile?.size} bytes)
+              {selectedFile?.name || defaultFilename} (
+              {selectedFile?.size || defaultFileSize} bytes)
             </span>
             <TrashIcon
               className="w-5 text-red-600 cursor-pointer"
@@ -199,7 +218,7 @@ const ImageUpload = forwardRef<ImageUploadRef, ImageUploadProps>(
 
         {error && <p className="text-sm text-red-500">{error}</p>}
 
-        {imageKey && !uploading && (
+        {successUpload && (
           <p className="text-sm text-green-600">Image uploaded successfully!</p>
         )}
       </div>

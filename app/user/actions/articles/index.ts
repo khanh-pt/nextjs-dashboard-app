@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { apiFetch } from '@/app/common/fetch';
 import { getCookie } from '@/app/common/cookie';
+import { EFileRole } from '@/app/user/types/file';
 
 const FormSchema = z.object({
   id: z.string(),
@@ -32,9 +33,9 @@ export type State = {
     title?: string;
     description?: string;
     body?: string;
-    fileId?: string;
+    fileId?: number;
     key?: string;
-    role?: string;
+    role?: EFileRole;
     tagList?: string[];
   };
   errors: {
@@ -47,8 +48,8 @@ export type State = {
 };
 
 const CreateArticle = FormSchema.omit({ id: true });
-const UpdateInvoice = FormSchema.omit({ id: true });
-const DeleteInvoice = FormSchema.pick({
+const UpdateArticle = FormSchema.omit({ id: true });
+const DeleteArticle = FormSchema.pick({
   id: true,
 });
 
@@ -91,6 +92,55 @@ export async function createArticle(prevState: State, formData: FormData) {
       formData: Object.fromEntries(formData.entries()),
       errors,
       message: 'Failed to create article.',
+    } as State;
+  }
+
+  redirect('/articles');
+}
+
+export async function updateArticle(
+  slug: string,
+  prevState: State,
+  formData: FormData,
+) {
+  const validatedFields = UpdateArticle.safeParse(
+    Object.fromEntries(formData.entries()),
+  );
+  if (!validatedFields.success) {
+    return {
+      formData: Object.fromEntries(formData.entries()),
+      errors: validatedFields.error.flatten().fieldErrors,
+      message: 'Missing Fields. Failed to Update Article.',
+    } as State;
+  }
+
+  const data = validatedFields.data;
+
+  const res = await apiFetch(`${process.env.NEST_BE_URL}/articles/${slug}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ article: data }),
+  });
+
+  if (!res.ok) {
+    let errors = {};
+    if (res.status === 422) {
+      const resJson = await res.json();
+      errors = resJson.details?.reduce((acc: any, curr: any) => {
+        if (!acc[curr.property]) {
+          acc[curr.property] = [];
+        }
+        acc[curr.property].push(curr.message);
+        return acc;
+      }, {} as Record<string, string[]>);
+    }
+
+    return {
+      formData: Object.fromEntries(formData.entries()),
+      errors,
+      message: 'Failed to update article.',
     } as State;
   }
 
