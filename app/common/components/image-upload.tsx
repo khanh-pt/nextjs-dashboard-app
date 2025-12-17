@@ -81,9 +81,9 @@ const ImageUpload = forwardRef<ImageUploadRef, ImageUploadProps>(
     const uploadImage = async (): Promise<
       { key: string; fileId: number; role: string } | undefined
     > => {
-      if (!selectedFile) return;
+      if (!selectedFile)
+        return { key: imageKey, fileId: +fileId, role: defaultRole };
 
-      console.log('Uploading file:', selectedFile);
       setUploading(true);
       setError(null);
 

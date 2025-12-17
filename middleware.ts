@@ -11,7 +11,10 @@ export const config = {
 };
 
 export default async function middleware(req: NextRequest) {
-  console.log('Middleware Request URL:', req.url);
+  console.log(
+    '=================== Middleware running for: ===================',
+    req.nextUrl.pathname,
+  );
   const pathname = req.nextUrl.pathname;
   const accessToken = req.cookies.get('accessToken')?.value;
   const refreshToken = req.cookies.get('refreshToken')?.value;
@@ -36,16 +39,9 @@ export default async function middleware(req: NextRequest) {
   if (accessToken && isTokenExpired(accessToken) && refreshToken) {
     const tokens = await refreshAccessToken(refreshToken);
 
-    console.log(
-      'Middleware Refresh Tokens------------------------------------------------------------:',
-      tokens,
-    );
-
     if (tokens && tokens.token && tokens.refreshToken) {
       // Create response and set new cookies
       const response = NextResponse.next();
-
-      response.cookies.set('kakak', Math.random().toString());
 
       response.cookies.set('accessToken', tokens.token, {
         httpOnly: true,
@@ -63,6 +59,8 @@ export default async function middleware(req: NextRequest) {
         maxAge: 60 * 60 * 24 * 30, // 30 days
       });
 
+      response.cookies.set('random', Math.random().toString());
+
       return response;
     }
 
@@ -74,8 +72,6 @@ export default async function middleware(req: NextRequest) {
   }
 
   const response = NextResponse.next();
-  response.cookies.set('forFUn', Math.random().toString());
-  return response;
 
-  // return NextResponse.next();
+  return response;
 }

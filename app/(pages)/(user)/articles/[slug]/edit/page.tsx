@@ -1,8 +1,7 @@
 import { apiFetch } from '@/app/common/fetch';
 import ArticleEditForm from '@/app/user/components/articles/article-edit-form';
-import { TArticleProps } from '@/app/user/types/article';
+import { TArticleApi } from '@/app/user/types/article';
 import { notFound } from 'next/navigation';
-import { Suspense } from 'react';
 
 export default async function Page({
   params,
@@ -16,7 +15,7 @@ export default async function Page({
     notFound();
   }
 
-  const { article }: { article: TArticleProps } = await res.json();
+  const { article }: { article: TArticleApi } = await res.json();
 
   return (
     <main>

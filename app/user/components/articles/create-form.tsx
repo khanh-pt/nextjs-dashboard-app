@@ -30,15 +30,12 @@ export default function CreateForm() {
       // Upload image first if one is selected
       if (imageUploadRef.current) {
         const result = await imageUploadRef.current.uploadImage();
-        console.log('Image upload result:', result);
         if (result) {
           formData.append('key', result.key);
           formData.append('fileId', result.fileId.toString());
           formData.append('role', result.role);
         }
       }
-
-      console.log('Form Data Entries:', Array.from(formData.entries()));
 
       // Now submit the form inside startTransition
       startTransition(() => {

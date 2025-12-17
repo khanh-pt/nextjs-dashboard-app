@@ -6,15 +6,12 @@ import { startTransition, useActionState, useRef } from 'react';
 import ImageUpload, {
   ImageUploadRef,
 } from '@/app/common/components/image-upload';
-import { TArticleProps } from '@/app/user/types/article';
+import { TArticleApi } from '@/app/user/types/article';
 import { EFileRole } from '@/app/user/types/file';
 
-export default function ArticleEditForm({
-  article,
-}: {
-  article: TArticleProps;
-}) {
+export default function ArticleEditForm({ article }: { article: TArticleApi }) {
   const { slug, title, description, body, tagList } = article;
+
   const { id, key, role, url, filename, byteSize } = article.files?.find(
     (file) => file.role === EFileRole.THUMBNAILS,
   ) || { fileId: undefined, key: undefined, role: undefined };
@@ -48,15 +45,12 @@ export default function ArticleEditForm({
       // Upload image first if one is selected
       if (imageUploadRef.current) {
         const result = await imageUploadRef.current.uploadImage();
-        console.log('Image upload result:', result);
         if (result) {
           formData.append('key', result.key);
           formData.append('fileId', result.fileId.toString());
           formData.append('role', result.role);
         }
       }
-
-      console.log('Form Data Entries:', Array.from(formData.entries()));
 
       // Now submit the form inside startTransition
       startTransition(() => {
@@ -136,6 +130,7 @@ export default function ArticleEditForm({
             id="tagList"
             name="tagList"
             placeholder="Enter tags"
+            defaultValue={state.formData.tagList?.join(', ')}
           />
           {state.errors.tagList && (
             <div className="text-red-500">

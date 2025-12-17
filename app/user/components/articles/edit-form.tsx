@@ -36,8 +36,6 @@ export default function EditInvoiceForm({
     initialState,
   );
 
-  console.log({ lll: state.formData });
-
   return (
     <form action={formAction}>
       <div className="rounded-md bg-gray-50 p-4 md:p-6">

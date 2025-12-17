@@ -107,14 +107,25 @@ export async function updateArticle(
     Object.fromEntries(formData.entries()),
   );
   if (!validatedFields.success) {
+    // convert tagList back to array for formData
+    let tagListInput = formData.get('tagList');
+    let tagList: string[] = [];
+    if (typeof tagListInput === 'string') {
+      tagList = tagListInput
+        .split(',')
+        .map((tag) => tag.trim())
+        .filter((tag) => tag.length > 0);
+    }
+
     return {
-      formData: Object.fromEntries(formData.entries()),
+      formData: { ...Object.fromEntries(formData.entries()), tagList },
       errors: validatedFields.error.flatten().fieldErrors,
       message: 'Missing Fields. Failed to Update Article.',
     } as State;
   }
 
   const data = validatedFields.data;
+  console.log('Updating article with data:', data);
 
   const res = await apiFetch(`${process.env.NEST_BE_URL}/articles/${slug}`, {
     method: 'PUT',
@@ -126,8 +137,9 @@ export async function updateArticle(
 
   if (!res.ok) {
     let errors = {};
+    let message = 'Failed to update article.';
+    const resJson = await res.json();
     if (res.status === 422) {
-      const resJson = await res.json();
       errors = resJson.details?.reduce((acc: any, curr: any) => {
         if (!acc[curr.property]) {
           acc[curr.property] = [];
@@ -137,10 +149,14 @@ export async function updateArticle(
       }, {} as Record<string, string[]>);
     }
 
+    if (res.status === 403) {
+      message = 'You do not have permission to update this article.';
+    }
+
     return {
-      formData: Object.fromEntries(formData.entries()),
+      formData: validatedFields.data,
       errors,
-      message: 'Failed to update article.',
+      message,
     } as State;
   }
 

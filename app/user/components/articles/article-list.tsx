@@ -42,7 +42,6 @@ export const ArticleList = async ({
   const resJson = await res.json();
   const { articles, articlesCount } = resJson;
   const totalPages = Math.ceil(articlesCount / limit);
-  // console.log(articles);
 
   return (
     <>

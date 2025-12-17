@@ -1,7 +1,6 @@
 import { apiFetch } from '@/app/common/fetch';
 
 export async function POST(req: Request) {
-  console.log('Received request for presigned URL');
   const { filename, contentType, checksum, size } = await req.json();
 
   const res = await apiFetch(`${process.env.NEST_BE_URL}/files/presigned-url`, {

@@ -1,4 +1,4 @@
-export type TArticleProps = {
+export type TArticleApi = {
   slug: string;
   title: string;
   description: string;
@@ -18,6 +18,7 @@ export type TArticleProps = {
     updatedAt: string;
   }[];
   author: {
+    id: number;
     username: string;
     bio: string | null;
     image: string | null;

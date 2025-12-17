@@ -49,7 +49,6 @@ type LoginRes = {
 };
 
 export async function register(prevState: RegisterState, formData: FormData) {
-  console.log('Register action called');
   const validatedFields = RegisterFormSchema.safeParse(
     Object.fromEntries(formData.entries()),
   );
@@ -127,7 +126,6 @@ export async function login(prevState: LoginState, formData: FormData) {
     body: JSON.stringify({ user: data }),
   });
   if (!res.ok) {
-    console.log('Login failed:', res.status, res.statusText);
     return {
       formData: Object.fromEntries(formData.entries()),
       errors: {},

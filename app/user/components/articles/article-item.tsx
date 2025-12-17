@@ -4,7 +4,7 @@ import { TagList } from './tag-list';
 import FavoriteArticleButton from './favorite-button';
 import Image from 'next/image';
 
-type TArticleProps = {
+type TArticleItemProps = {
   lastModified: string;
   slug: string;
   title: string;
@@ -28,8 +28,7 @@ export const ArticleItem = ({
   description,
   favoritesCount,
   thumbnailUrl,
-}: TArticleProps) => {
-  // console.log({ thumbnailUrl });
+}: TArticleItemProps) => {
   return (
     <div className="flex flex-col gap-4 group/item my-4">
       <div className="flex justify-between items-center">

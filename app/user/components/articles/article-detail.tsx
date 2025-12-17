@@ -5,44 +5,19 @@ import FavoriteArticleButton from './favorite-button';
 import Image from 'next/image';
 import { apiFetch } from '@/app/common/fetch';
 import { notFound } from 'next/navigation';
-
-type TArticleProps = {
-  slug: string;
-  title: string;
-  description: string;
-  body: string;
-  tagList: string[];
-  favorited: boolean;
-  favoritesCount: number;
-  files: {
-    id: number;
-    key: string;
-    filename: string;
-    contentType: string;
-    url: string;
-    byteSize: number;
-    role: string;
-    createdAt: string;
-    updatedAt: string;
-  }[];
-  author: {
-    username: string;
-    bio: string | null;
-    image: string | null;
-    following: boolean;
-  };
-  createdAt: string;
-  updatedAt: string;
-};
+import { TArticleApi } from '@/app/user/types/article';
+import { TCurrentUser } from '@/app/user/types/current-user';
 
 export const ArticleDetail = async ({ slug }: { slug: string }) => {
-  console.log('ArticleDetail slug:', slug);
   const res = await apiFetch(`${process.env.NEST_BE_URL}/articles/${slug}`);
 
   if (!res.ok) {
     notFound();
   }
-  const { article }: { article: TArticleProps } = await res.json();
+  const {
+    article,
+    currentUser,
+  }: { article: TArticleApi; currentUser?: TCurrentUser } = await res.json();
 
   const {
     title,
@@ -61,6 +36,11 @@ export const ArticleDetail = async ({ slug }: { slug: string }) => {
 
   return (
     <div className="my-4">
+      {author.id === currentUser?.id && (
+        <Link href={`/articles/${slug}/edit`} className="underline">
+          Edit Article
+        </Link>
+      )}
       <div className="w-fit h-fit bg-transparent flex gap-1 items-center">
         {author && (
           <Link href={`/profile/${author.username}`}>

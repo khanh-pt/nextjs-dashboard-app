@@ -46,7 +46,6 @@ export default async function Table({
 
   const data: { articles: GetAllArticles[]; articlesCount: number } =
     await res.json();
-  console.log({ data });
   const articles = data.articles;
   const totalPages = Math.ceil(Number(data.articlesCount) / limit);
 
