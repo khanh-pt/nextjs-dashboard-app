@@ -1,7 +1,11 @@
 'use client';
 
 import { useState, useImperativeHandle, forwardRef } from 'react';
-import { PhotoIcon, TrashIcon } from '@heroicons/react/24/outline';
+import {
+  PhotoIcon,
+  TrashIcon,
+  VideoCameraIcon,
+} from '@heroicons/react/24/outline';
 import Image from 'next/image';
 import { EFileRole } from '@/app/user/types/file';
 
@@ -13,28 +17,28 @@ async function calculateFileChecksum(file: File): Promise<string> {
   return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
-interface ImageUploadProps {
+interface VideoUploadProps {
   defaultFileId?: number;
-  defaultImageKey?: string;
+  defaultVideoKey?: string;
   defaultRole: EFileRole;
-  defaultImageUrl?: string;
+  defaultVideoUrl?: string;
   defaultFilename?: string;
   defaultFileSize?: number;
 }
 
-export interface ImageUploadRef {
-  uploadImage: () => Promise<
+export interface VideoUploadRef {
+  uploadVideo: () => Promise<
     { key: string; fileId: number; role: string } | undefined
   >;
 }
 
-const ImageUpload = forwardRef<ImageUploadRef, ImageUploadProps>(
+const VideoUpload = forwardRef<VideoUploadRef, VideoUploadProps>(
   (
     {
       defaultFileId = '',
-      defaultImageKey = '',
-      defaultRole = EFileRole.THUMBNAILS,
-      defaultImageUrl = '',
+      defaultVideoKey = '',
+      defaultRole = EFileRole.VIDEOS,
+      defaultVideoUrl = '',
       defaultFilename = '',
       defaultFileSize = 0,
     },
@@ -42,10 +46,8 @@ const ImageUpload = forwardRef<ImageUploadRef, ImageUploadProps>(
   ) => {
     const [uploading, setUploading] = useState(false);
     const [fileId, setFileId] = useState(defaultFileId);
-    const [imageKey, setImageKey] = useState(defaultImageKey);
-    const [previewUrl, setPreviewUrl] = useState<string | null>(
-      defaultImageUrl,
-    );
+    const [videoKey, setVideoKey] = useState(defaultVideoKey);
+    const [videoSrc, setVideoSrc] = useState<string | null>(defaultVideoUrl);
     const [error, setError] = useState<string | null>(null);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [successUpload, setSuccessUpload] = useState<Boolean>(false);
@@ -55,34 +57,30 @@ const ImageUpload = forwardRef<ImageUploadRef, ImageUploadProps>(
       if (!file) return;
 
       // Validate file type
-      if (!file.type.startsWith('image/')) {
-        setError('Please select an image file');
+      if (!file.type.startsWith('video/')) {
+        setError('Please select a video file');
         return;
       }
 
-      // Validate file size (max 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        setError('File size must be less than 5MB');
+      // Validate file size (max 200MB)
+      if (file.size > 200 * 1024 * 1024) {
+        setError('File size must be less than 200MB');
         return;
       }
 
       setError(null);
       setSelectedFile(file);
 
-      // Create preview URL for better UX
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPreviewUrl(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+      const objectUrl = URL.createObjectURL(file);
+      setVideoSrc(objectUrl);
     };
 
     // Expose upload function to parent component
-    const uploadImage = async (): Promise<
+    const uploadVideo = async (): Promise<
       { key: string; fileId: number; role: string } | undefined
     > => {
       if (!selectedFile)
-        return { key: imageKey, fileId: +fileId, role: defaultRole };
+        return { key: videoKey, fileId: +fileId, role: defaultRole };
 
       setUploading(true);
       setError(null);
@@ -103,8 +101,20 @@ const ImageUpload = forwardRef<ImageUploadRef, ImageUploadProps>(
         });
 
         if (!response.ok) {
+          let errors = {};
+          if (response.status === 422) {
+            const resJson = await response.json();
+            errors = resJson.details?.reduce((acc: any, curr: any) => {
+              if (!acc[curr.property]) {
+                acc[curr.property] = [];
+              }
+              acc[curr.property].push(curr.message);
+              return acc;
+            }, {} as Record<string, string[]>);
+          }
+
           setError(
-            'Failed to get upload URL from server! ' + response.statusText,
+            'Failed to get upload URL from server! ' + JSON.stringify(errors),
           );
           setUploading(false);
           return;
@@ -140,61 +150,65 @@ const ImageUpload = forwardRef<ImageUploadRef, ImageUploadProps>(
         }
 
         setFileId(fileId);
-        setImageKey(key);
+        setVideoKey(key);
         setSelectedFile(null);
         setUploading(false);
         setSuccessUpload(true);
         return { fileId, key, role: defaultRole };
       } catch (err) {
         setError(
-          `Failed to upload image. Please try again. ${(err as Error).message}`,
+          `Failed to upload video. Please try again. ${(err as Error).message}`,
         );
         setUploading(false);
       }
     };
 
-    // Expose uploadImage function to parent via ref
+    // Expose uploadVideo function to parent via ref
     useImperativeHandle(ref, () => ({
-      uploadImage,
+      uploadVideo: uploadVideo,
     }));
 
     return (
       <div className="space-y-2">
         <div className="flex items-center justify-center w-full">
           <label
-            htmlFor="image-upload"
+            htmlFor="video-upload"
             className="flex flex-col items-center justify-center w-full h-48 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100"
           >
-            {previewUrl ? (
-              <div className="relative w-full h-full">
-                <Image
-                  src={previewUrl}
-                  alt="Preview"
-                  fill
-                  className="object-contain p-2 rounded-lg"
-                />
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                <PhotoIcon className="w-12 h-12 mb-3 text-gray-400" />
-                <p className="mb-2 text-sm text-gray-500">
-                  <span className="font-semibold">Click to upload</span> or drag
-                  and drop
-                </p>
-                <p className="text-xs text-gray-500">PNG, JPG, GIF up to 5MB</p>
-              </div>
-            )}
+            <div className="flex flex-col items-center justify-center pt-5 pb-6">
+              <VideoCameraIcon className="w-12 h-12 mb-3 text-gray-400" />
+              <p className="mb-2 text-sm text-gray-500">
+                <span className="font-semibold">Click to upload</span> or drag
+                and drop
+              </p>
+              <p className="text-xs text-gray-500">MP4 up to 5MB</p>
+            </div>
             <input
-              id="image-upload"
+              id="video-upload"
               type="file"
               className="hidden"
-              accept="image/*"
+              accept="video/*"
               onChange={handleFileChange}
               disabled={uploading}
             />
           </label>
         </div>
-        {previewUrl && (
+
+        {uploading && (
+          <p className="text-sm text-blue-600">Uploading video...</p>
+        )}
+
+        {error && <p className="text-sm text-red-500">{error}</p>}
+
+        {successUpload && (
+          <p className="text-sm text-green-600">Video uploaded successfully!</p>
+        )}
+        <div className="flex justify-center">
+          {videoSrc && (
+            <video src={videoSrc} controls className="w-[500px] h-auto" />
+          )}
+        </div>
+        {videoSrc && (
           <div className="flex items-center">
             <span className="text-blue-600 p-1">
               {selectedFile?.name || defaultFilename} (
@@ -204,28 +218,18 @@ const ImageUpload = forwardRef<ImageUploadRef, ImageUploadProps>(
               className="w-5 text-red-600 cursor-pointer"
               onClick={(e) => {
                 e.stopPropagation();
-                setPreviewUrl(null);
+                setVideoSrc(null);
                 setSelectedFile(null);
                 setError(null);
               }}
             />
           </div>
         )}
-
-        {uploading && (
-          <p className="text-sm text-blue-600">Uploading image...</p>
-        )}
-
-        {error && <p className="text-sm text-red-500">{error}</p>}
-
-        {successUpload && (
-          <p className="text-sm text-green-600">Image uploaded successfully!</p>
-        )}
       </div>
     );
   },
 );
 
-ImageUpload.displayName = 'ImageUpload';
+VideoUpload.displayName = 'VideoUpload';
 
-export default ImageUpload;
+export default VideoUpload;

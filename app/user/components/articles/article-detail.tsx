@@ -7,6 +7,7 @@ import { apiFetch } from '@/app/common/fetch';
 import { notFound } from 'next/navigation';
 import { TArticleApi } from '@/app/user/types/article';
 import { TCurrentUser } from '@/app/user/types/current-user';
+import { EFileRole } from '../../types/file';
 
 export const ArticleDetail = async ({ slug }: { slug: string }) => {
   const res = await apiFetch(`${process.env.NEST_BE_URL}/articles/${slug}`);
@@ -31,7 +32,11 @@ export const ArticleDetail = async ({ slug }: { slug: string }) => {
   } = article;
 
   const thumbnailUrl = article.files?.find(
-    (file) => file.role === 'thumbnails',
+    (file) => file.role === EFileRole.THUMBNAILS,
+  )?.url;
+
+  const videoUrl = article.files?.find(
+    (file) => file.role === EFileRole.VIDEOS,
   )?.url;
 
   return (
@@ -99,6 +104,12 @@ export const ArticleDetail = async ({ slug }: { slug: string }) => {
           </div>
         )}
       </Link>
+
+      {videoUrl && (
+        <div className="mt-5">
+          <video src={videoUrl} controls className="w-[500px]" />
+        </div>
+      )}
       <div className="flex justify-between items-center p-0 m-0">
         <div>{body}</div>
       </div>

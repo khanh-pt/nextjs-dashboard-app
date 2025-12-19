@@ -8,6 +8,7 @@ import ImageUpload, {
 } from '@/app/common/components/image-upload';
 import { TArticleApi } from '@/app/user/types/article';
 import { EFileRole } from '@/app/user/types/file';
+import Link from 'next/link';
 
 export default function ArticleEditForm({ article }: { article: TArticleApi }) {
   const { slug, title, description, body, tagList } = article;
@@ -15,6 +16,10 @@ export default function ArticleEditForm({ article }: { article: TArticleApi }) {
   const { id, key, role, url, filename, byteSize } = article.files?.find(
     (file) => file.role === EFileRole.THUMBNAILS,
   ) || { fileId: undefined, key: undefined, role: undefined };
+
+  const videoUrl = article.files?.find(
+    (file) => file.role === EFileRole.VIDEOS,
+  )?.url;
 
   const imageUploadRef = useRef<ImageUploadRef>(null);
 
@@ -160,6 +165,15 @@ export default function ArticleEditForm({ article }: { article: TArticleApi }) {
           />
         </div>
 
+        <Link href={`/articles/${slug}/video-edit`} className="underline">
+          Edit video
+        </Link>
+
+        {videoUrl && (
+          <div className="mt-5">
+            <video src={videoUrl} controls className="w-[500px]" />
+          </div>
+        )}
         <div className="mt-4">
           {isPending ? (
             <p>Updating article...</p>

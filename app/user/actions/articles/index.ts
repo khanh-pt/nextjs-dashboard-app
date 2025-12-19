@@ -8,10 +8,16 @@ import { getCookie } from '@/app/common/cookie';
 import { EFileRole } from '@/app/user/types/file';
 
 const FormSchema = z.object({
-  id: z.string(),
-  title: z.string().min(1, { message: 'Please enter a title.' }),
-  description: z.string().min(1, { message: 'Please enter a description.' }),
-  body: z.string().min(1, { message: 'Please enter the body content.' }),
+  id: z.string().optional(),
+  title: z.string().min(1, { message: 'Please enter a title.' }).optional(),
+  description: z
+    .string()
+    .min(1, { message: 'Please enter a description.' })
+    .optional(),
+  body: z
+    .string()
+    .min(1, { message: 'Please enter the body content.' })
+    .optional(),
   tagList: z
     .string()
     .optional()
@@ -21,7 +27,7 @@ const FormSchema = z.object({
             .split(',')
             .map((tag) => tag.trim())
             .filter((tag) => tag.length > 0)
-        : [],
+        : undefined,
     ),
   fileId: z.string().optional(),
   key: z.string().optional(),
